@@ -8,7 +8,7 @@ Currently implemented:
 - Image compression level
 - Work progress bar
 - Counter of processed files
-- Counter of processing errors and log file with indication of files that are not processed
+- Counter of processing errors and Error.log file with indication of files that are not processed
 
 # ![](https://github.com/YanaShineRu/Image-Compressor/blob/main/ImageCompressor.png)
 # ![](https://github.com/YanaShineRu/Image-Compressor/blob/main/ImageCompressor_.png)
