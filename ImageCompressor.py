@@ -1,9 +1,11 @@
 import os
 import sys
-import cv2
+from PIL import Image
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QFileDialog, QMessageBox, QProgressBar, QLabel, QSlider, QVBoxLayout, QHBoxLayout, QDesktopWidget
 from PyQt5.QtCore import Qt
 from tqdm import tqdm
+from pathlib import Path
+
 
 class ImageCompressor(QMainWindow):
     def __init__(self):
@@ -30,7 +32,7 @@ class ImageCompressor(QMainWindow):
         widget = QWidget(self)
         self.setCentralWidget(widget)
 
-        select_button = QPushButton('Выбрeрите директорию', widget)
+        select_button = QPushButton('Выберите директорию', widget)
         select_button.clicked.connect(self.select_directory)
 
         self.quality_label = QLabel('Степень сжатия: 85', widget)
@@ -61,7 +63,7 @@ class ImageCompressor(QMainWindow):
         widget.setLayout(layout)
 
     def update_quality_label(self):
-        self.quality = 100 - self.quality_slider.value()
+        self.quality = self.quality_slider.value()
         self.quality_label.setText(f'Степень сжатия: {self.quality}')
 
     def select_directory(self):
@@ -89,7 +91,13 @@ class ImageCompressor(QMainWindow):
         for root, _, files in os.walk(directory):
             for file_name in files:
                 file_path = os.path.join(root, file_name)
-                self.files.append(file_path)
+                if self.is_supported_image(file_path):
+                    self.files.append(file_path)
+
+    def is_supported_image(self, file_path):
+        supported_formats = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff']
+        file_extension = Path(file_path).suffix.lower()
+        return file_extension in supported_formats
 
     def process_files(self):
         for file_path in tqdm(self.files[self.current_file:], desc='Обработка файлов', unit='файл'):
@@ -102,12 +110,19 @@ class ImageCompressor(QMainWindow):
 
     def process_file(self, file_path):
         try:
-            image = cv2.imread(file_path)
-            if image is not None:
-                cv2.imwrite(file_path, image, [cv2.IMWRITE_JPEG_QUALITY, self.quality])
+            file_extension = Path(file_path).suffix.lower()
+
+            if file_extension in ['.jpg', '.jpeg']:
+                image = Image.open(file_path)
+                image.save(file_path, optimize=True, quality=self.quality)
+            elif file_extension == '.png':
+                image = Image.open(file_path)
+                image.save(file_path, optimize=True)
+            elif file_extension == '.gif':
+                subprocess.run(['gifsicle', '-O3', str(Path(file_path)), '-o', str(Path(file_path))])
             else:
-                self.write_error_log(file_path, 'Ошибка чтения изображения')
-                self.error_count += 1
+                # Обработка других форматов изображений, если необходимо
+                pass
         except Exception as e:
             self.write_error_log(file_path, str(e))
             self.error_count += 1
@@ -120,7 +135,7 @@ class ImageCompressor(QMainWindow):
         QApplication.quit()
 
     def write_error_log(self, file_path, error_message):
-        log_file_path = os.path.join(self.directory, 'error_log.txt')
+        log_file_path = str(Path(self.directory) / 'error_log.txt')
         try:
             with open(log_file_path, 'a') as f:
                 f.write(f"Ошибка при обработке файла: {file_path}\n")
@@ -128,6 +143,7 @@ class ImageCompressor(QMainWindow):
                 f.write("------------------------\n")
         except Exception as e:
             print(f"Ошибка записи в журнал ошибок: {str(e)}")
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
