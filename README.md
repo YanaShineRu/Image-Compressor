@@ -10,6 +10,9 @@ Currently implemented:
 - Counter of processed files
 - Counter of processing errors and Error.log file with indication of files that are not processed
 
+# Support format
+> *.jpg, *.jpeg, *.png, *.gif, *.bmp, *.tiff
+
 # ![](https://github.com/YanaShineRu/Image-Compressor/blob/main/ImageCompressor.png)
 # ![](https://github.com/YanaShineRu/Image-Compressor/blob/main/ImageCompressor_.png)
 
