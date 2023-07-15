@@ -1,11 +1,12 @@
 import os
 import sys
-from PIL import Image
+import subprocess
+import glob
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QFileDialog, QMessageBox, QProgressBar, QLabel, QSlider, QVBoxLayout, QHBoxLayout, QDesktopWidget
 from PyQt5.QtCore import Qt
+from PIL import Image
 from tqdm import tqdm
 from pathlib import Path
-
 
 class ImageCompressor(QMainWindow):
     def __init__(self):
@@ -69,6 +70,14 @@ class ImageCompressor(QMainWindow):
     def select_directory(self):
         self.directory = QFileDialog.getExistingDirectory(self, 'Выберите директорию')
 
+    def scan_directory(self, directory):
+        self.files = []
+        file_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff']
+        for file_extension in file_extensions:
+            pattern = os.path.join(directory, f'**/*{file_extension}')
+            files = glob.glob(pattern, recursive=True)
+            self.files.extend(files)
+
     def compress_images(self):
         if self.directory:
             self.files = []
@@ -79,7 +88,7 @@ class ImageCompressor(QMainWindow):
 
             if self.files:
                 self.progress_bar.setMaximum(len(self.files))
-                self.progress_label.setText(f'Обработано файлов {self.current_file + 1}/{len(self.files)}')
+                self.progress_label.setText(f'Обработано файлов 0/{len(self.files)}')
 
                 self.process_files()
             else:
@@ -87,20 +96,13 @@ class ImageCompressor(QMainWindow):
         else:
             QMessageBox.warning(self, 'Ошибка', 'Директория не выбрана.')
 
-    def scan_directory(self, directory):
-        for root, _, files in os.walk(directory):
-            for file_name in files:
-                file_path = os.path.join(root, file_name)
-                if self.is_supported_image(file_path):
-                    self.files.append(file_path)
-
     def is_supported_image(self, file_path):
         supported_formats = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff']
         file_extension = Path(file_path).suffix.lower()
         return file_extension in supported_formats
 
     def process_files(self):
-        for file_path in tqdm(self.files[self.current_file:], desc='Обработка файлов', unit='файл'):
+        for file_path in tqdm(self.files, desc='Обработка файлов', unit='файл'):
             self.process_file(file_path)
             self.current_file += 1
             self.progress_bar.setValue(self.current_file)
@@ -143,7 +145,6 @@ class ImageCompressor(QMainWindow):
                 f.write("------------------------\n")
         except Exception as e:
             print(f"Ошибка записи в журнал ошибок: {str(e)}")
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
